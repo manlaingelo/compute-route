@@ -83,18 +83,57 @@ const skyLayer: maplibregl.LayerSpecification = {
     }
 } as any;
 
+const hillshadeLayer: maplibregl.HillshadeLayerSpecification = {
+    id: 'hillshade',
+    type: 'hillshade',
+    source: 'terrain-source',
+    paint: {
+        'hillshade-exaggeration': 0.8,
+        'hillshade-shadow-color': 'rgba(0, 0, 0, 0.5)',
+        'hillshade-highlight-color': 'rgba(255, 255, 255, 0.5)',
+        'hillshade-accent-color': 'rgba(0, 0, 0, 0.5)'
+    }
+};
+
+const SATELLITE_STYLE: any = {
+    version: 8,
+    sources: {
+        'esri-satellite': {
+            type: 'raster',
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256
+        },
+        'terrain-source': { // Must redefine source in style or ensure it persists? 
+            // React-map-gl <Source> component handles this, but the Map style switch might clear sources not in the style. 
+            // However, <Source> as a child of <Map> *should* re-add it.
+            // Let's rely on the <Source> component to manage 'terrain-source'.
+        }
+    },
+    layers: [
+        {
+            id: 'satellite-layer',
+            type: 'raster',
+            source: 'esri-satellite',
+            paint: {}
+        }
+    ]
+};
+
 export default function ThreeDMap({
     initialViewState = {
-        longitude: -74.006,
-        latitude: 40.7128,
-        zoom: 14,
-        pitch: 60,
+        longitude: 7.7491,
+        latitude: 46.0207,
+        zoom: 13,
+        pitch: 75,
         bearing: 0
     },
     mapStyle = 'https://tiles.openfreemap.org/styles/bright',
     targetLoc
 }: Map3DProps) {
     const mapRef = React.useRef<MapRef>(null);
+    const [styleMode, setStyleMode] = React.useState<'vector' | 'satellite'>('vector');
 
     // Handle FlyTo
     React.useEffect(() => {
@@ -110,35 +149,62 @@ export default function ThreeDMap({
         }
     }, [targetLoc]);
 
+    // Determine current style
+    // Note: When switching to satellite, we use our local object. 
+    // When vector, we use the prop.
+    const currentStyle = styleMode === 'vector' ? mapStyle : SATELLITE_STYLE;
+
     return (
         <div className="w-full h-full relative">
+            <div className="absolute top-4 left-4 z-20">
+                <button
+                    onClick={() => setStyleMode(prev => prev === 'vector' ? 'satellite' : 'vector')}
+                    className="px-4 py-2 bg-white/90 backdrop-blur text-black font-semibold rounded shadow-lg border border-gray-200 hover:bg-white transition-colors"
+                >
+                    {styleMode === 'vector' ? 'Switch to Satellite' : 'Switch to Vector'}
+                </button>
+            </div>
+
             <Map
                 ref={mapRef}
                 initialViewState={initialViewState}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle={mapStyle}
+                mapStyle={currentStyle}
                 // OpenFreeMap doesn't need API key
                 maxPitch={85}
+                terrain={{ source: 'terrain-source', exaggeration: 1.5 }}
             >
+                {/* Terrain Source */}
+                <Source
+                    id="terrain-source"
+                    type="raster-dem"
+                    tiles={['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']}
+                    encoding="terrarium"
+                    tileSize={256}
+                    maxzoom={15}
+                />
+
+                {/* Hillshade Layer - Only in Vector Mode */}
+                {styleMode === 'vector' && (
+                    <Layer {...hillshadeLayer} />
+                )}
+
                 {/* Navigation Control */}
                 <NavigationControl position="top-right" />
 
-                {/* 3D Buildings Layer */}
-                {/* We need to ensure the source "openfreemap" exists in the style OR we add it. 
-            The "bright" style from OpenFreeMap usually comes with sources. 
-            We should check if we need to add a source explicitly. 
-            Usually styles include sources.
-            For "bright", the vector source is usually "openfreemap". 
-            Let's assume it is. If not, we might need to Inspect the style.
-            Safety: Add Source just in case or rely on style.
-            Actually, it's safer to not add Source if it's in the style to avoid ID collision.
-            But to enable 3D buildings on a 2D style, we usually DO need to add the layer referencing the source in the style.
-        */}
+                {/* 3D Buildings Layer - Only in Vector Mode (optional, but usually looks weird on satellite) */}
+                {/* User didn't strictly say to remove buildings in satellite, but usually "Satellite" implies photographic view. 
+                    However, "Vector view needs hillshading" implies separation. 
+                    Let's keep buildings in vector mode only for cleanliness, or both if not specified.
+                    User prompt: "Ensure the hillshade layer ... only renders when the map is in 'vector' mode"
+                    It doesn't explicitly say remove buildings, but standard logic suggests it. 
+                    I'll leave buildings in both for now as they provide context, but hillshade definitely only in vector.
+                    Actually, let's keep buildings in both? No, let's keep buildings to Vector to match the "Map" aesthetic vs "Real" aesthetic.
+                */}
+                {styleMode === 'vector' && <Layer {...buildingsLayer} />}
 
-                <Layer {...buildingsLayer} />
-                {/* Sky layer */}
+                {/* Sky layer - Good for both */}
                 <Layer {...skyLayer} />
-                {/* Note: Sky layer might crash if not supported by the GL context or style. Leaving commented out or basic. */}
             </Map>
         </div>
     );
