@@ -223,6 +223,19 @@ export default function ThreeDMap({
                 */}
                 {styleMode === 'vector' && <Layer {...buildingsLayer} />}
 
+                {/* Aimag Borders */}
+                <Source id="aimag-source" type="geojson" data="/aimag.geojson">
+                    <Layer
+                        id="aimag-layer"
+                        type="line"
+                        paint={{
+                            'line-color': '#ffffff',
+                            'line-width': 2,
+                            'line-opacity': 0.8
+                        }}
+                    />
+                </Source>
+
                 {/* Sky layer - Good for both */}
                 {/* <Layer {...skyLayer} /> */}
             </Map>

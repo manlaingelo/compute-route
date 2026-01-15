@@ -44,4 +44,6 @@ next-env.d.ts
 # public large files
 
 public/my_dem.pmtiles
+public/aimag.zip
+public/aimag.geojson
 

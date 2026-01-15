@@ -12,7 +12,7 @@ const ThreeDMap = dynamic(() => import('../components/ThreeDMap'), {
 
 // City Coordinates
 const CITIES: Record<City, { center: [number, number]; zoom: number; pitch: number; bearing: number }> = {
-  'UB': { center: [116.4074, 51.1074], zoom: 14, pitch: 60, bearing: 0 },
+  'UB': { center: [106.9177, 47.9184], zoom: 13, pitch: 60, bearing: 0 },
   'Tokyo': { center: [139.6917, 35.6895], zoom: 14, pitch: 60, bearing: -45 },
   'Paris': { center: [2.3522, 48.8566], zoom: 14, pitch: 60, bearing: 30 }
 };

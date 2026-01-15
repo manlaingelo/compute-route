@@ -33,7 +33,7 @@ export default function MapControls({
                         className="px-2 py-1 bg-blue-500/20 hover:bg-blue-500/40 
                        border border-blue-400/30 rounded-md transition-all text-xs"
                     >
-                        Ulaanbaator
+                        UB
                     </button>
                     <button
                         onClick={() => onFlyTo('Tokyo')}

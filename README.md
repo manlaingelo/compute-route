@@ -37,3 +37,5 @@ pnpm run dev
 ---
 
 ![preview](public/preview.png)
+
+![preview2](public/preview_2.png)
