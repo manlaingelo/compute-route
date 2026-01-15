@@ -1,17 +1,39 @@
-### Mapbox api keys accross all public 
-# github search results:
+## Quick Start
 
-mapboxgl.accessToken = 'pk.eyJ1Ijoic2Fub25lIiwiYSI6ImNrb2ZzZ2R0MjBjM2YycW1wZ252Z292Z28ifQ.0wW0wW0wW0wW0wW0wW0wW0';
+Playground project for rendering Mongolian ASTER GDEM data using MapLibre and PMTiles.
 
-```first
+This project is vibe coded.
 
-pk.eyJ1IjoiaGlqaWFuZ3RhbyIsImEiOiJjampxcjFnb3E2NTB5M3BvM253ZHV5YjhjIn0.WneUon5qFigfJRJ3oaZ3Ow
+## Features
+
+* Render Mongolian ASTER GDEM data with MapLibre and PMTiles.
+* Toggle between vector and satellite base maps.
+* Toggle between 3D and 2D viewing modes.
+* Toggle between day and night lighting modes.
+* Toggle between light and dark UI themes.
+
+## Installation
+
+```bash
+pnpm install
+
 ```
 
+## Usage
 
-```second
-
-pk.eyJ1IjoiYXlhenVycmVobWFuNzg2IiwiYSI6ImNsdTZvbnphcjFzMGUyam54aWYxMzFraG8ifQ.yjQ5BZj58dJBP0Mts0r7Ww 
+```bash
+pnpm run dev
 
 ```
 
+## Pages
+
+* `/app/page.tsx` - Main entry point (redirects to or mirrors 3D map).
+* `/app/3d-map/page.tsx` - Dedicated 3D map interface.
+* `/tracker/page.tsx` - Route tracker interface.
+
+## Preview
+
+---
+
+![preview](public/preview.png)
