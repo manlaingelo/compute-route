@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-export type City = 'NYC' | 'Tokyo' | 'Paris';
+export type City = 'UB' | 'Tokyo' | 'Paris';
 export type Theme = 'day' | 'night';
 
 interface MapControlsProps {
@@ -29,11 +29,11 @@ export default function MapControls({
                 <label className="text-xs uppercase tracking-wide opacity-80 font-semibold">Fly To</label>
                 <div className="grid grid-cols-3 gap-2">
                     <button
-                        onClick={() => onFlyTo('NYC')}
+                        onClick={() => onFlyTo('UB')}
                         className="px-2 py-1 bg-blue-500/20 hover:bg-blue-500/40 
                        border border-blue-400/30 rounded-md transition-all text-xs"
                     >
-                        NYC
+                        Ulaanbaator
                     </button>
                     <button
                         onClick={() => onFlyTo('Tokyo')}

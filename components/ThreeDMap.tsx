@@ -4,6 +4,7 @@ import * as React from 'react';
 import Map, { Source, Layer, MapRef, NavigationControl } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Protocol } from 'pmtiles';
 
 // TypeScript interfaces
 export interface ViewState {
@@ -149,6 +150,15 @@ export default function ThreeDMap({
         }
     }, [targetLoc]);
 
+    // Register PMTiles protocol
+    React.useEffect(() => {
+        let protocol = new Protocol();
+        maplibregl.addProtocol('pmtiles', protocol.tile);
+        return () => {
+            maplibregl.removeProtocol('pmtiles');
+        };
+    }, []);
+
     // Determine current style
     // Note: When switching to satellite, we use our local object. 
     // When vector, we use the prop.
@@ -172,14 +182,29 @@ export default function ThreeDMap({
                 mapStyle={currentStyle}
                 // OpenFreeMap doesn't need API key
                 maxPitch={85}
-                terrain={{ source: 'terrain-source', exaggeration: 1.5 }}
+                terrain={{ source: 'terrain-source', exaggeration: 1 }}
+                onLoad={(e) => {
+                    // @ts-ignore
+                    window.map = e.target;
+                }}
             >
+
+
                 {/* Terrain Source */}
                 <Source
                     id="terrain-source"
                     type="raster-dem"
-                    tiles={['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png']}
-                    encoding="terrarium"
+                    url={'pmtiles://' + (typeof window !== 'undefined' ? window.location.origin : '') + '/my_dem.pmtiles'}
+                    // @ts-ignore
+                    encoding="custom"
+                    // @ts-ignore
+                    redFactor={256}
+                    // @ts-ignore
+                    greenFactor={1}
+                    // @ts-ignore
+                    blueFactor={0}
+                    // @ts-ignore
+                    baseShift={0}
                     tileSize={256}
                     maxzoom={15}
                 />
@@ -204,7 +229,7 @@ export default function ThreeDMap({
                 {styleMode === 'vector' && <Layer {...buildingsLayer} />}
 
                 {/* Sky layer - Good for both */}
-                <Layer {...skyLayer} />
+                {/* <Layer {...skyLayer} /> */}
             </Map>
         </div>
     );
