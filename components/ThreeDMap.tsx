@@ -105,11 +105,6 @@ const SATELLITE_STYLE: any = {
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256
-        },
-        'terrain-source': { // Must redefine source in style or ensure it persists? 
-            // React-map-gl <Source> component handles this, but the Map style switch might clear sources not in the style. 
-            // However, <Source> as a child of <Map> *should* re-add it.
-            // Let's rely on the <Source> component to manage 'terrain-source'.
         }
     },
     layers: [
@@ -182,7 +177,7 @@ export default function ThreeDMap({
                 mapStyle={currentStyle}
                 // OpenFreeMap doesn't need API key
                 maxPitch={85}
-                terrain={{ source: 'terrain-source', exaggeration: 1 }}
+                terrain={{ source: 'terrain-source', exaggeration: 0.1 }}
                 onLoad={(e) => {
                     // @ts-ignore
                     window.map = e.target;
