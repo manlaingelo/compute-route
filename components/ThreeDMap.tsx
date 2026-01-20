@@ -83,7 +83,6 @@ const skyLayer: maplibregl.LayerSpecification = {
 	type: "sky",
 	paint: {
 		"sky-type": "atmosphere",
-		// @ts-expect-error
 		"sky-atmosphere-sun": [0.0, 0.0],
 		"sky-atmosphere-sun-intensity": 15,
 	},
@@ -122,26 +121,31 @@ const SATELLITE_STYLE: any = {
 	],
 };
 
-export default function ThreeDMap({
-	initialViewState = {
-		longitude: 7.7491,
-		latitude: 46.0207,
-		zoom: 13,
-		pitch: 75,
-		bearing: 0,
-	},
-	mapStyle = "https://tiles.openfreemap.org/styles/bright",
-	targetLoc,
-}: Map3DProps) {
-	const mapRef = React.useRef<MapRef>(null);
+const ThreeDMap = React.forwardRef<MapRef, Map3DProps>(
+	(
+		{
+			initialViewState = {
+				longitude: 7.7491,
+				latitude: 46.0207,
+				zoom: 13,
+				pitch: 75,
+				bearing: 0,
+			},
+			mapStyle = "https://tiles.openfreemap.org/styles/bright",
+			targetLoc,
+		},
+		ref,
+	) => {
+		const mapRef = React.useRef<MapRef>(null);
+		const mergedRef = (ref as any) || mapRef;
 	const [styleMode, setStyleMode] = React.useState<"vector" | "satellite">(
 		"vector",
 	);
 
 	// Handle FlyTo
 	React.useEffect(() => {
-		if (targetLoc && mapRef.current) {
-			mapRef.current.flyTo({
+		if (targetLoc && mergedRef.current) {
+			mergedRef.current.flyTo({
 				center: targetLoc.center,
 				zoom: targetLoc.zoom,
 				pitch: targetLoc.pitch,
@@ -180,7 +184,7 @@ export default function ThreeDMap({
 			</div>
 
 			<Map
-				ref={mapRef}
+				ref={mergedRef}
 				initialViewState={initialViewState}
 				style={{ width: "100%", height: "100%" }}
 				mapStyle={currentStyle}
@@ -201,15 +205,10 @@ export default function ThreeDMap({
 						(typeof window !== "undefined" ? window.location.origin : "") +
 						"/my_dem.pmtiles"
 					}
-					// @ts-expect-error
 					encoding="custom"
-					// @ts-expect-error
 					redFactor={256}
-					// @ts-expect-error
 					greenFactor={1}
-					// @ts-expect-error
 					blueFactor={0}
-					// @ts-expect-error
 					baseShift={0}
 					tileSize={256}
 					maxzoom={15}
@@ -250,4 +249,8 @@ export default function ThreeDMap({
 			</Map>
 		</div>
 	);
-}
+});
+
+ThreeDMap.displayName = "ThreeDMap";
+
+export default ThreeDMap;

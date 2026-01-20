@@ -11,8 +11,11 @@
 		"check": "biome check --write ."
 	},
 	"dependencies": {
+		"@types/jszip": "^3.4.0",
 		"@types/leaflet-routing-machine": "^3.2.9",
 		"@types/maplibre-gl": "^1.13.2",
+		"geotiff": "^2.1.4-beta.1",
+		"jszip": "^3.10.1",
 		"leaflet": "^1.9.4",
 		"leaflet-routing-machine": "^3.2.12",
 		"maplibre-gl": "^5.16.0",

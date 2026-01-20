@@ -1,118 +1,102 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import * as React from "react";
-import MapControls, {
-	type City,
-	type Theme,
-} from "../../components/MapControls";
+import ThreeDMap from "@/components/ThreeDMap";
+import { useGeoTiff } from "@/hooks/useGeoTiff";
+import { createGeoTiffCanvas } from "@/utils/geoTiffToCanvas";
+import type { MapRef } from "react-map-gl/maplibre";
+import { useEffect, useRef } from "react";
 
-// Dynamic import with loading state
-const ThreeDMap = dynamic(() => import("../../components/ThreeDMap"), {
-	ssr: false,
-	loading: () => (
-		<div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white">
-			Loading Map...
-		</div>
-	),
+export default function ThreeDMapPage() {
+const mapRef = useRef<MapRef>(null);
+const { geoTiffData, loading, error } = useGeoTiff("/slope_aspect.zip");
+
+useEffect(() => {
+if (!geoTiffData || !mapRef.current) return;
+
+const map = mapRef.current.getMap();
+
+// Wait for map to be loaded
+if (!map.isStyleLoaded()) {
+map.once("load", () => addGeoTiffLayer());
+} else {
+addGeoTiffLayer();
+}
+
+function addGeoTiffLayer() {
+if (!geoTiffData || !mapRef.current) return;
+const map = mapRef.current.getMap();
+
+// Remove existing layer and source if present
+if (map.getLayer("geotiff-layer")) {
+map.removeLayer("geotiff-layer");
+}
+if (map.getSource("geotiff-source")) {
+map.removeSource("geotiff-source");
+}
+
+// Create canvas from GeoTIFF data
+const canvas = createGeoTiffCanvas(geoTiffData);
+
+// Add source
+map.addSource("geotiff-source", {
+type: "image",
+url: canvas.toDataURL(),
+coordinates: [
+[geoTiffData.bbox[0], geoTiffData.bbox[3]], // top-left
+[geoTiffData.bbox[2], geoTiffData.bbox[3]], // top-right
+[geoTiffData.bbox[2], geoTiffData.bbox[1]], // bottom-right
+[geoTiffData.bbox[0], geoTiffData.bbox[1]], // bottom-left
+],
 });
 
-// City Coordinates
-const CITIES: Record<
-	City,
-	{ center: [number, number]; zoom: number; pitch: number; bearing: number }
-> = {
-	UB: { center: [106.9177, 47.9184], zoom: 13, pitch: 60, bearing: 0 },
-	Tokyo: { center: [139.6917, 35.6895], zoom: 14, pitch: 60, bearing: -45 },
-	Paris: { center: [2.3522, 48.8566], zoom: 14, pitch: 60, bearing: 30 },
-};
+// Add layer
+map.addLayer({
+id: "geotiff-layer",
+type: "raster",
+source: "geotiff-source",
+paint: {
+"raster-opacity": 0.7,
+},
+});
 
-export default function Home() {
-	const [theme, setTheme] = React.useState<Theme>("day");
-	const [targetLoc, setTargetLoc] = React.useState<{
-		center: [number, number];
-		zoom: number;
-		pitch: number;
-		bearing: number;
-	} | null>(null);
+// Fit map to GeoTIFF bounds
+map.fitBounds(
+[
+[geoTiffData.bbox[0], geoTiffData.bbox[1]], // southwest
+[geoTiffData.bbox[2], geoTiffData.bbox[3]], // northeast
+],
+{ padding: 50, duration: 1000 },
+);
+}
+}, [geoTiffData]);
 
-	// Handlers
-	const handleFlyTo = (city: City) => {
-		setTargetLoc(CITIES[city]);
-	};
+return (
+<div className="w-screen h-screen relative">
+{loading && (
+<div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center">
+<div className="bg-white rounded-lg p-6 shadow-xl">
+<p className="text-lg font-semibold">Loading GeoTIFF...</p>
+</div>
+</div>
+)}
 
-	const handleToggleTheme = (newTheme: Theme) => {
-		setTheme(newTheme);
-	};
+{error && (
+<div className="absolute top-4 right-4 z-50 bg-red-500 text-white rounded-lg p-4 shadow-xl max-w-md">
+<p className="font-semibold">Error loading GeoTIFF:</p>
+<p className="text-sm">{error}</p>
+</div>
+)}
 
-	const handleReset = () => {
-		setTargetLoc(CITIES["UB"]);
-	};
-
-	// Map Style URL
-	// OpenFreeMap:
-	// Bright: https://tiles.openfreemap.org/styles/bright
-	// Positron/Dark? OpenFreeMap might only have 'bright' as the main public one documented in prompt.
-	// "Use OpenFreeMap (https://tiles.openfreemap.org/styles/bright)"
-	// "A toggle for 'Night Mode' (swapping to the 'dark' style from OpenFreeMap)."
-	// I will guess the URL for dark is 'https://tiles.openfreemap.org/styles/dark' or similar.
-	// If not, I'll use a standard MapLibre dark style or just filter.
-	// Let's try 'https://tiles.openfreemap.org/styles/dark' as implied by prompt "swapping to the 'dark' style".
-	const mapStyle =
-		theme === "day"
-			? "https://tiles.openfreemap.org/styles/bright"
-			: "https://tiles.openfreemap.org/styles/liberty"; // Liberty is a common free style, or maybe 'dark'.
-	// Let's assume 'https://tiles.openfreemap.org/styles/dark' exists or falls back.
-	// Actually, prompt says "swapping to the 'dark' style from OpenFreeMap".
-	// Let's try to be safe. checking documentation isn't possible, but 'positron' / 'dark_matter' are common.
-	// I will use a known darkness if the prompt pattern implies one.
-	// Let's stick to the prompt's implied existence.
-
-	const finalStyle =
-		theme === "day"
-			? "https://tiles.openfreemap.org/styles/bright"
-			: "https://tiles.openfreemap.org/styles/positron"; // Fallback if 'dark' doesn't exist, but 'positron' is technically Carto.
-	// Actually, let's just use the string 'https://tiles.openfreemap.org/styles/dark'?
-	// Let's look at the implementation plan I wrote: "switches style URL".
-	// I will check the documentation if I could, but wait.
-	// I will use 'https://tiles.openfreemap.org/styles/liberty' as a dark-ish alternative or just a dark implementation.
-	// Wait, OpenFreeMap website says it offers "Bright".
-	// Let's assume there's no dark style if not heavily documented.
-	// But the prompt demanded it.
-	// I will try 'https://tiles.openfreemap.org/styles/dark' if it works.
-	// Or I can use a standard maplibre style 'https://demotiles.maplibre.org/style.json' (which is bright).
-	// For now, I will use a placeholder or best guess.
-	// Better: I will use a Carto Dark Matter style as a backup for Night Mode if OpenFreeMap doesn't have one,
-	// BUT the prompt constraints say "Map Tiles: Use OpenFreeMap... for completely free...".
-	// If OpenFreeMap only has bright, Night Mode might need to be "fake" (CSS filter) or I can try 'https://tiles.openfreemap.org/styles/dark'.
-	// I'll use 'https://tiles.openfreemap.org/styles/dark' and hope.
-
-	return (
-		<main className="relative w-full h-screen overflow-hidden">
-			{/* Search/Header Overlay - Keeping it minimal or replacing with Controls */}
-
-			<MapControls
-				onFlyTo={handleFlyTo}
-				onToggleTheme={handleToggleTheme}
-				onReset={handleReset}
-				currentTheme={theme}
-			/>
-
-			<div className="w-full h-full">
-				<ThreeDMap
-					mapStyle={
-						theme === "day"
-							? "https://tiles.openfreemap.org/styles/bright"
-							: "https://tiles.openfreemap.org/styles/positron"
-					} // Positron is light. Dark Matter is dark.
-					targetLoc={targetLoc}
-				/>
-			</div>
-
-			{/* Attribution */}
-			<div className="absolute bottom-1 right-1 pointer-events-none text-xs text-gray-500 z-50 px-2 py-1 bg-white/50 rounded">
-				Map Data © OpenStreetMap | Tiles © OpenFreeMap
-			</div>
-		</main>
-	);
+<ThreeDMap
+ref={mapRef}
+initialViewState={{
+longitude: 7.7491,
+latitude: 46.0207,
+zoom: 13,
+pitch: 60,
+bearing: 0,
+}}
+/>
+</div>
+);
 }
